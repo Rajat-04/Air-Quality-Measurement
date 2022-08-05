@@ -9,19 +9,29 @@
 #define RatioMQ135CleanAir 3.6//RS / R0 = 3.6 ppm  
 
 #define MQ135S A3
-#define MQ6S A2
-#define MQ7S A5
-#define dhtS 9
-#define MQ4S A0
+#define MQ6S A1
+#define MQ7S A0
+#define dhtS 7
+#define MQ4S A2
 
 MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, MQ135S, "MQ-135");
 MQUnifiedsensor MQ7(placa, Voltage_Resolution, ADC_Bit_Resolution, MQ7S, "MQ-7");
 MQUnifiedsensor MQ4(placa, Voltage_Resolution, ADC_Bit_Resolution, MQ4S, "MQ-4");
 MQUnifiedsensor MQ6(placa, Voltage_Resolution, ADC_Bit_Resolution, MQ6S, "MQ-6");
 
+#define         RatioMQ6CleanAir          (5) //RS / R0 = 5 ppm 
+#define         RatioMQ4CleanAir          (5) //RS / R0 = 5 ppm 
+#define         RatioMQ135CleanAir        (3.6) //RS / R0 = 10 ppm 
+#define         RatioMQ7CleanAir          (5) //RS / R0 = 27.5 ppm  
+
+
 // FOR DHT ----------------------------------->
-#define DHTTYPE    DHT11     // DHT 11
-DHT_Unified dht(dhtS, DHTTYPE);
+#define DHTTYPE  DHT11     // DHT 11
+DHT dht(dhtS, DHTTYPE);
+
+// Defining the threshold values
+#define co2Th = 999;
+
 
 void setup() {
 Serial.begin(9600);
@@ -53,6 +63,7 @@ digitalWrite(11,LOW);
 digitalWrite(12,LOW);
 digitalWrite(13,LOW);
 
+calb();
 
 MQ135Setup();
 MQ7Setup();
@@ -65,224 +76,264 @@ dht.begin();
 
   
 // For CO Carbon monoxide setup
+String gName = " ";
+
 void CORead(){
-  // for MQ135
- MQ135.setA(605.18); MQ135.setB(-3.937); // Configure the equation to to calculate NH4 concentration
- MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
-
- // FOR MQ4
- MQ4.setA(200000000000000); MQ4.setB(-19.05); // Configure the equation to to calculate NH4 concentration
- MQ4.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ4.readSensor();
- MQ4.serialDebug();
-
-  // FOR MQ6
- MQ6.setA(1000000000000000); MQ6.setB(-13.5); // Configure the equation to to calculate NH4 concentration
- MQ6.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ6.readSensor();
- MQ6.serialDebug();
-
-  
+  gName = " ";
+     Serial.println("CO CarbonMonoxide MQ7"); 
 // MQ-7
  MQ7.setA(99.042); MQ7.setB(-1.518); // Configure the equation to to calculate NH4 concentration
  MQ7.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ7.readSensor();
- MQ7.serialDebug();
+gName = PPMPercentage( MQ7.readSensor() ,gName);
 
 }
 
- // For alcohol measuerement 
-void AlcoholRead(){
-   Serial.println("ALCOHOL MQ135"); 
+ // FOR Alcohol
+ void AlcoholRead(){ 
+  gName = " ";
+     Serial.println("ALCOHOL MQ135"); 
     // for MQ135
- MQ135.setA( 77.25); MQ135.setB(-3.18 ); // Configure the equation to to calculate NH4 concentration
+ MQ135.setA( 77.255); MQ135.setB(-3.18 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
-   Serial.println("ALCOHOL MQ4"); 
- // FOR MQ4
- MQ4.setA(60000000000 ); MQ4.setB(-14.01); // Configure the equation to to calculate NH4 concentration
- MQ4.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ4.readSensor();
- MQ4.serialDebug();
-   Serial.println("ALCOHOL MQ6"); 
-  // FOR MQ6
- MQ6.setA(50000000); MQ6.setB(-6.017); // Configure the equation to to calculate NH4 concentration
- MQ6.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ6.readSensor();
- MQ6.serialDebug();
-
-     Serial.println("ALCOHOL MQ7"); 
-// MQ-7
- MQ7.setA(40000000000000000); MQ7.setB(-12.35); // Configure the equation to to calculate NH4 concentration
- MQ7.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ7.readSensor();
- MQ7.serialDebug();
+gName = PPMPercentage( MQ135.readSensor() ,gName);
 }
 
 
 // FOR C02 carbon dioxide setup
 void CO2Read(){
+  gName = " ";
  Serial.println("CO2 Carboon dioxide MQ135"); 
   // for MQ135
  MQ135.setA( 110.47); MQ135.setB(-2.862 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
+ float co2ppm = map(MQ135.readSensor(),0,1023,400,5000);   
+ gName=PPMPercentage( co2ppm ,gName);
+
 
 }
 
 
 // FOR Toulen
 void ToulenRead(){
-     Serial.println("toulen MQ135"); 
+  gName=" ";
+     Serial.println("TOULEN MQ135"); 
     // for MQ135
  MQ135.setA(44.947); MQ135.setB(-3.445 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
+gName=PPMPercentage( MQ135.readSensor() ,gName);
 
 }
 
 // For NH4 Ammonium
 void NH4Read(){
+  gName = " ";
    Serial.println("AMMONIA NH4 MQ135"); 
     // for MQ135
  MQ135.setA( 102.2); MQ135.setB(-2.473 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
+gName = PPMPercentage( MQ135.readSensor() ,gName);
 
 }
 
  // FOR Aceaton
  void AceatonRead(){ 
-     Serial.println("ACETON MQ135"); 
+  gName = " ";
+     Serial.println("ACEATON MQ135"); 
     // for MQ135
  MQ135.setA( 34.668); MQ135.setB(-3.369 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ135.readSensor();
- MQ135.serialDebug();
+gName = PPMPercentage( MQ135.readSensor() ,gName);
+}
+
+// FOR CH4
+void Ch4Read(){
+  Serial.println("CH4 MQ4"); 
+    MQ4.setA(1012.7); MQ4.setB(-2.786); //CH4
+    MQ4.update();
+    gName = PPMPercentage( MQ4.readSensor() ,gName);
 }
 
 // FOR LPG
 void LPGRead(){
-   Serial.println("LPG MQ4"); 
- // FOR MQ4
- MQ4.setA(1012.7 ); MQ4.setB(-2.786); // Configure the equation to to calculate NH4 concentration
- MQ4.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ4.readSensor();
- MQ4.serialDebug();
-   Serial.println("LPG MQ6"); 
-  // FOR MQ6
- MQ6.setA(1009.2); MQ6.setB(-2.35); // Configure the equation to to calculate NH4 concentration
- MQ6.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ6.readSensor();
- MQ6.serialDebug();
-
-     Serial.println("LPG MQ7"); 
-// MQ-7
- MQ7.setA(700000000); MQ7.setB(-7.703); // Configure the equation to to calculate NH4 concentration
- MQ7.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ7.readSensor();
- MQ7.serialDebug();
+  float sensor_volt;
+float RS_gas; // Get value of RS in a GAS
+float R0 = 15000; //example value of R0. Replace with your own
+float ratio; // Get ratio RS_GAS/RS_air
+float LPG_PPM;
+ 
+  gName= " ";
+   Serial.println("LPG MQ6 "); 
+  sensor_volt=(float)analogRead(MQ6S )/1024*5.0;
+    RS_gas = (5.0-sensor_volt)/sensor_volt;
+    ratio = RS_gas/R0;
+    float x = 1000*ratio ;
+    LPG_PPM = pow(x,-1.431);//LPG PPM
+    gName = PPMPercentage(LPG_PPM,gName);
 }
 
 // FOR Smoke
 void SmokeRead(){
+  gName =" ";
      Serial.println("SMOKE MQ4"); 
  // FOR MQ4
  MQ4.setA(30000000 ); MQ4.setB(-8.308); // Configure the equation to to calculate NH4 concentration
  MQ4.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ4.readSensor();
- MQ4.serialDebug();
+gName =PPMPercentage( MQ4.readSensor() ,gName);
   
   }
 
 
 // For H2
 void H2Read(){
-    Serial.println("H2 MQ6"); 
-  // FOR MQ6
- MQ6.setA(88158); MQ6.setB(-3.597); // Configure the equation to to calculate NH4 concentration
- MQ6.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ6.readSensor();
- MQ6.serialDebug();
+  gName = " ";
+    Serial.println("H2  MQ7"); 
 
-     Serial.println("H2 MQ7"); 
 // MQ-7
- MQ7.setA(69.014); MQ7.setB(-1.374); // Configure the equation to to calculate NH4 concentration
+ MQ7.setA(69.014); MQ7.setB(-1.374); 
  MQ7.update(); // Update data, the arduino will read the voltage from the analog pin
- MQ7.readSensor();
- MQ7.serialDebug();
+gName =PPMPercentage( MQ7.readSensor() ,gName);
   
 }
 
 // SETIP ALL SENSRS
 
 void MQ6Setup(){
+
   MQ6.setRegressionMethod(1); //_PPM =  a*ratio^b
-  MQ6.setA(2127.2); MQ6.setB(-2.526); // Configure the equation to to calculate CH4 concentration
-  MQ6.init();
+  MQ6.setA(2127.2); MQ6.setB(-2.526); // Configure the equation to to calculate CH4 concentration 
+    MQ6.init();
+
 }
 void MQ4Setup(){
+
   //Set math model to calculate the PPM concentration and the value of constants
   MQ4.setRegressionMethod(1); //_PPM =  a*ratio^b
   MQ4.setA(1012.7); MQ4.setB(-2.786); // Configure the equation to to calculate CH4 concentration
-  MQ4.init();
+      MQ4.init();
+
 }
 void MQ7Setup(){
+
   MQ7.setRegressionMethod(1); //_PPM =  a*ratio^b
   MQ7.setA(99.042); MQ7.setB(-1.518); // Configure the equation to calculate CO concentration value
   //Remarks: Configure the pin of arduino as input.
-  MQ7.init();
+    MQ7.setR0(3.39);
+        MQ7.init();
 }
 void MQ135Setup(){
+  
   //Set math model to calculate the PPM concentration and the value of constants
   MQ135.setRegressionMethod(1); //_PPM =  a*ratio^b
   MQ135.setA(102.2); MQ135.setB(-2.473); // Configure the equation to to calculate NH4 concentration
   //Remarks: Configure the pin of arduino as input.
-  MQ135.init(); 
+    MQ135.init(); 
+
 }
 
 void dht11(){
    // Get temperature event and print its value.
-  sensors_event_t event;
-  dht.temperature().getEvent(&event);
-  if (isnan(event.temperature)) {
-    Serial.println(F("Error reading temperature!"));
-  }
-  else {
-    Serial.print(F("Temperature: "));
-    Serial.print(event.temperature);
-    Serial.println(F("°C"));
-  }
+    Serial.println(F("Temperature °C "));
+    Serial.println(dht.readTemperature());
   // Get humidity event and print its value.
-  dht.humidity().getEvent(&event);
-  if (isnan(event.relative_humidity)) {
-    Serial.println(F("Error reading humidity!"));
-  }
-  else {
-    Serial.print(F("Humidity: "));
-    Serial.print(event.relative_humidity);
-    Serial.println(F("%"));
-  }
+    Serial.println(F("Humidity % "));
+    Serial.println(dht.readHumidity());
+
 }
 
+
+// GET PPM PERCENTAGE
+String PPMPercentage(float sensorValue, String gasName){
+  gasName = sensorValue;
+  Serial.print(gasName);
+  return gasName;
+}
+
+// FOR CALIBRATION
+void calb(){
+//   // put your setup code here, to run once:
+//Serial.begin(9600);
+//Set math model to calculate the PPM concentration and the value of constants
+//  MQ6.setRegressionMethod(1); //_PPM =  a*ratio^b
+//  MQ6.init(); 
+//
+//    MQ4.setRegressionMethod(1); //_PPM =  a*ratio^b
+//  MQ4.init(); 
+//
+//    MQ135.setRegressionMethod(1); //_PPM =  a*ratio^b
+//  MQ135.init(); 
+//
+//    MQ7.setRegressionMethod(1); //_PPM =  a*ratio^b
+//  MQ7.init(); 
+////  
+/////*While calibrating Your sensor Uncomment this calibration portion and calibrate for R0.*/
+////  /*****************************  MQ CAlibration ********************************************/
+//  Serial.print("Calibrating please wait.");
+//  float  MQ6calcR0 = 0,
+//         MQ4calcR0 = 0,
+//         MQ135calcR0 = 0,
+//         MQ7calcR0 = 0;
+//  for (int i = 1; i <= 10; i ++)
+//  {
+//    //Update the voltage lectures
+//    MQ6.update();
+//    MQ4.update();
+//    MQ135.update();
+//    MQ7.update();
+//
+//    MQ6calcR0 += MQ6.calibrate(RatioMQ6CleanAir);
+//    MQ4calcR0 += MQ4.calibrate(RatioMQ4CleanAir);
+//    MQ135calcR0 += MQ135.calibrate(RatioMQ135CleanAir);
+//    MQ7calcR0 += MQ7.calibrate(RatioMQ7CleanAir);
+//
+//    Serial.print(".");
+//  }
+  MQ6.setR0(10.71);
+  MQ4.setR0(5.87);
+  MQ135.setR0(5.25);
+  MQ7.setR0(2.21);
+
+//  Serial.println("  done!.");
+//
+//  Serial.print("(MQ6 - MQ7):");
+//  Serial.print(MQ6calcR0 / 10); Serial.print(" | ");
+//  Serial.print(MQ4calcR0 / 10); Serial.print(" | ");
+//  Serial.print(MQ135calcR0 / 10); Serial.print(" | ");
+//  Serial.print(MQ7calcR0 / 10); Serial.print(" | ");
+//
+
+  /*****************************  MQ CAlibration ********************************************/ 
+}
+
+
+int count = 0;
 void loop() {
 Serial.println("Reading Sensor Vlaues");
 H2Read();
+Serial.println();
 CORead();
+Serial.println();
 AlcoholRead();
+Serial.println();
 NH4Read();
+Serial.println();
 AceatonRead();
+Serial.println();
 LPGRead();
+Serial.println();
 SmokeRead();
+Serial.println();
 ToulenRead();
+Serial.println();
 CO2Read();
-
-Serial.println("DHT 11 ---------");
+Serial.println();
 dht11();
+count++;
+delay(2000);
+
+if(count==11){
+  Serial.println("1 Hour");
+  count=0;
+  delay(1000);
+}
+
 }
