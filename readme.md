@@ -12,14 +12,21 @@ Gas sensor (MQ-7, MQ-135, MQ-4, MQ-6)
 Temperature and Humidity sensor (DHT-11)
 
 # References:
+
 [DHT-11 Datsheet](https://components101.com/sensors/dht11-temperature-sensor)
+
 ![DHT-11 SENSOR](https://github.com/saswat711/Air-Quality-Measurement/blob/main/dht-11-sensor%20image.jpg?raw=true)
 
 [MQ-6 Datsheet](https://www.sparkfun.com/datasheets/Sensors/Biometric/MQ-6.pdf)
+
 [MQ-7 Datsheet](https://www.sparkfun.com/datasheets/Sensors/Biometric/MQ-7.pdf)
+
 [MQ-4 Datsheet](https://www.sparkfun.com/datasheets/Sensors/Biometric/MQ-4.pdf)
+
 [MQ-135 Datsheet](https://components101.com/sensors/mq135-gas-sensor-for-air-quality)
+
 ![MQ Sensor](https://github.com/saswat711/Air-Quality-Measurement/blob/main/MQSensor%20image.jpg?raw=true)
 
 ** Initial Prototyping of the device **
+
 ![Initial Prototype](https://github.com/saswat711/Air-Quality-Measurement/blob/main/Initial%20prototyping%20image.jpg?raw=true)
