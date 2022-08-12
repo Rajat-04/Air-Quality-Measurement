@@ -24,6 +24,10 @@ MQUnifiedsensor MQ6(placa, Voltage_Resolution, ADC_Bit_Resolution, MQ6S, "MQ-6")
 #define         RatioMQ135CleanAir        (3.6) //RS / R0 = 10 ppm 
 #define         RatioMQ7CleanAir          (5) //RS / R0 = 27.5 ppm  
 
+float  MQ6calcR0 = 0,
+         MQ4calcR0 = 0,
+         MQ135calcR0 = 0,
+         MQ7calcR0 = 0;
 
 // FOR DHT ----------------------------------->
 #define DHTTYPE  DHT11     // DHT 11
@@ -31,7 +35,7 @@ DHT dht(dhtS, DHTTYPE);
 
 // Defining the threshold values
 #define co2Th = 999;
-
+#define coTh = 50;
 
 void setup() {
 Serial.begin(9600);
@@ -84,18 +88,25 @@ void CORead(){
 // MQ-7
  MQ7.setA(99.042); MQ7.setB(-1.518); // Configure the equation to to calculate NH4 concentration
  MQ7.update(); // Update data, the arduino will read the voltage from the analog pin
-gName = PPMPercentage( MQ7.readSensor() ,gName);
+ float sensorValue = analogRead(A0);
+ float sensor_volt = sensorValue/1024*5.0;
+ float RS_gas = (5.0-sensor_volt)/sensor_volt;
+ float ratio = RS_gas/MQ7calcR0; //Replace R0 with the value found using the sketch above
+ float x = 1538.46 * ratio;
+ float ppm = pow(x,-1.709);
+gName = PPMPercentage( ppm ,gName);
+checkThreshold(coTh,ppm);
 
 }
 
  // FOR Alcohol
  void AlcoholRead(){ 
-  gName = " ";
+ gName = " ";
      Serial.println("ALCOHOL MQ135"); 
     // for MQ135
  MQ135.setA( 77.255); MQ135.setB(-3.18 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
-gName = PPMPercentage( MQ135.readSensor() ,gName);
+ gName = PPMPercentage( MQ135.readSensor() ,gName);
 }
 
 
@@ -109,7 +120,7 @@ void CO2Read(){
  float co2ppm = map(MQ135.readSensor(),0,1023,400,5000);   
  gName=PPMPercentage( co2ppm ,gName);
 
-
+ checkThreshold(co2Th,co2ppm);
 }
 
 
@@ -120,7 +131,7 @@ void ToulenRead(){
     // for MQ135
  MQ135.setA(44.947); MQ135.setB(-3.445 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
-gName=PPMPercentage( MQ135.readSensor() ,gName);
+ gName=PPMPercentage( MQ135.readSensor() ,gName);
 
 }
 
@@ -131,7 +142,7 @@ void NH4Read(){
     // for MQ135
  MQ135.setA( 102.2); MQ135.setB(-2.473 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
-gName = PPMPercentage( MQ135.readSensor() ,gName);
+ gName = PPMPercentage( MQ135.readSensor() ,gName);
 
 }
 
@@ -142,12 +153,12 @@ gName = PPMPercentage( MQ135.readSensor() ,gName);
     // for MQ135
  MQ135.setA( 34.668); MQ135.setB(-3.369 ); // Configure the equation to to calculate NH4 concentration
  MQ135.update(); // Update data, the arduino will read the voltage from the analog pin
-gName = PPMPercentage( MQ135.readSensor() ,gName);
+ gName = PPMPercentage( MQ135.readSensor() ,gName);
 }
 
 // FOR CH4
 void Ch4Read(){
-  Serial.println("CH4 MQ4"); 
+    Serial.println("CH4 MQ4"); 
     MQ4.setA(1012.7); MQ4.setB(-2.786); //CH4
     MQ4.update();
     gName = PPMPercentage( MQ4.readSensor() ,gName);
@@ -161,9 +172,9 @@ float R0 = 15000; //example value of R0. Replace with your own
 float ratio; // Get ratio RS_GAS/RS_air
 float LPG_PPM;
  
-  gName= " ";
+   gName= " ";
    Serial.println("LPG MQ6 "); 
-  sensor_volt=(float)analogRead(MQ6S )/1024*5.0;
+   sensor_volt=(float)analogRead(MQ6S )/1024*5.0;
     RS_gas = (5.0-sensor_volt)/sensor_volt;
     ratio = RS_gas/R0;
     float x = 1000*ratio ;
@@ -248,10 +259,26 @@ String PPMPercentage(float sensorValue, String gasName){
   return gasName;
 }
 
+// Check for threshold value
+void checkThreshold(float ThVal,float curVal){
+  if(curVal>=ThVal){
+    //play buzzer
+    
+  }
+}
+
+// For setting Ro value
+void setRo(){
+   MQ6.setR0(MQ6calcR0);
+  MQ4.setR0(MQ4calcR0);
+  MQ135.setR0(MQ135calcR0);
+  MQ7.setR0(MQ7calcR0);
+}
+
 // FOR CALIBRATION
 void calb(){
 //   // put your setup code here, to run once:
-//Serial.begin(9600);
+Serial.begin(9600);
 //Set math model to calculate the PPM concentration and the value of constants
 //  MQ6.setRegressionMethod(1); //_PPM =  a*ratio^b
 //  MQ6.init(); 
@@ -268,10 +295,6 @@ void calb(){
 /////*While calibrating Your sensor Uncomment this calibration portion and calibrate for R0.*/
 ////  /*****************************  MQ CAlibration ********************************************/
 //  Serial.print("Calibrating please wait.");
-//  float  MQ6calcR0 = 0,
-//         MQ4calcR0 = 0,
-//         MQ135calcR0 = 0,
-//         MQ7calcR0 = 0;
 //  for (int i = 1; i <= 10; i ++)
 //  {
 //    //Update the voltage lectures
@@ -287,11 +310,8 @@ void calb(){
 //
 //    Serial.print(".");
 //  }
-  MQ6.setR0(10.71);
-  MQ4.setR0(5.87);
-  MQ135.setR0(5.25);
-  MQ7.setR0(2.21);
 
+//
 //  Serial.println("  done!.");
 //
 //  Serial.print("(MQ6 - MQ7):");
@@ -300,10 +320,9 @@ void calb(){
 //  Serial.print(MQ135calcR0 / 10); Serial.print(" | ");
 //  Serial.print(MQ7calcR0 / 10); Serial.print(" | ");
 //
-
+   setRo();
   /*****************************  MQ CAlibration ********************************************/ 
 }
-
 
 int count = 0;
 void loop() {

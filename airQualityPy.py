@@ -22,6 +22,7 @@ try:
         reader = csv.reader(f)
         if(reader != None):
             csvExists = True
+            # Clearing the previous values of the csv file
             csvExists.truncate(0)
         f.close()
 except:
@@ -63,35 +64,30 @@ def main():
         conn = serial.Serial("COM6", 9600)
         try:
             sensor_names = defaultdict(lambda: 0)
-            count = 0
             val = []
             while True:
-                if(count < 12):
-                    while(conn.inWaiting() == 0 and conn.isOpen()):
-                        pass
-                    packet = conn.readline()
-                    incoming = packet.decode('utf').rstrip('\n')
-                    print(incoming)
-                    if(incoming == "1 Hour"):
-                        print("1 hour triggered")
-                        # adding an empty row in every 1 hour mark
-                        #df.loc[df.shape[0]] = [None, None, None, None, None, None, None, None, None, None, None, None]
+                while(conn.inWaiting() == 0 and conn.isOpen()):
+                    pass
+                packet = conn.readline()
+                incoming = packet.decode('utf').rstrip('\n')
+                print(incoming)
+                if(incoming == "1 Hour"):
+                    print("1 hour triggered")
+                    # adding an empty row in every 1 hour mark
+                    x = [{'H2 MQ7': None, 'CO CarbonMonoxide MQ7': None, 'ALCOHOL MQ135': None, 'AMMONIA NH4 MQ135': None, 'ACEATON MQ135': None, 'LPG MQ6': None,
+                          'SMOKE MQ4': None, 'TOULEN MQ135': None, 'CO2 Carboon dioxide MQ135': None, 'Temperature': None, 'Humidity %': None, 'Time': None}]
+                    write_to_csv(x)
+                if(isfloat(incoming)):
+                    incoming = incoming[:-2]
+                    val.append(float(incoming))
+                    # updating the dict value
 
-                    if(isfloat(incoming)):
-                        incoming = incoming[:-2]
-                        val.append(float(incoming))
-                        # updating the dict value
-
-                    if(len(val) == 11):
-                        x = [{'H2 MQ7': val[0], 'CO CarbonMonoxide MQ7': val[1], 'ALCOHOL MQ135': val[2], 'AMMONIA NH4 MQ135': val[3], 'ACEATON MQ135': val[4], 'LPG MQ6': val[5],
-                              'SMOKE MQ4': val[6], 'TOULEN MQ135': val[7], 'CO2 Carboon dioxide MQ135': val[8], 'Temperature': val[9], 'Humidity %': val[10], 'Time': str(datetime.datetime.now())}]
-                        write_to_csv(x)
-                        count = count+1
-                        val = []
-                else:
-                    plot(True)
-                    count = 0
-                    break
+                if(len(val) == 11):
+                    x = [{'H2 MQ7': val[0], 'CO CarbonMonoxide MQ7': val[1], 'ALCOHOL MQ135': val[2], 'AMMONIA NH4 MQ135': val[3], 'ACEATON MQ135': val[4], 'LPG MQ6': val[5],
+                          'SMOKE MQ4': val[6], 'TOULEN MQ135': val[7], 'CO2 Carboon dioxide MQ135': val[8], 'Temperature': val[9], 'Humidity %': val[10], 'Time': str(datetime.datetime.now())}]
+                    write_to_csv(x)
+                    count = count+1
+                    val = []
 
         except:
             print("Disconnected")
@@ -100,18 +96,20 @@ def main():
 
 
 def plot(val):
-    if(val):
+    try:
         # for plotting the graph
         df = pd.read_csv(filename)
         df.drop('CO2 Carboon dioxide MQ135', axis=1, inplace=True)
-        df.plot()
+        if not df.empty:
+            df.plot()
 
         df2 = pd.read_csv(filename)
         df2 = df2['CO2 Carboon dioxide MQ135']
-        df2.plot()
+        if not df2.empty:
+            df2.plot()
         plt.show()
-        plot(False)
-    else:
+    except:
+        print("No data to plot")
         main()
 
 
